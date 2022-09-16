@@ -1,0 +1,2 @@
+clickhouse:
+  hosts: jdbc:ch:http://localhost:37000/default
