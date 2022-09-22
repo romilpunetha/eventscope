@@ -4,6 +4,7 @@ import com.clickhouse.client.*;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -79,12 +80,29 @@ public class ClickhouseRepository {
 
 
     public <T> Multi<T> runQuery(String query) {
+        return this.runQuery(query, null);
+    }
+
+    public <T> Multi<T> runQuery(String query, Class<T> clazz) {
+        return this.runQuery(query, null, clazz);
+    }
+
+    public <T> Multi<T> runQuery(String query, Integer position, Class<T> clazz) {
         return Uni.createFrom().completionStage(() -> request.query(query).execute())
                 .map(response -> response.stream().filter(ObjectUtils::isNotEmpty).collect(Collectors.toList()))
                 .onItem().transformToMulti(records -> Multi.createFrom().iterable(records))
-                .map(Unchecked.function(record -> this.objectMapper.readValue(record.getValue(0).asString(), new TypeReference<>() {
-                        })
-                ));
+                .map(Unchecked.function(record -> getValue(record, position, clazz)));
+    }
+
+    private <T> T getValue(ClickHouseRecord record, Integer position, Class<T> clazz) throws JsonProcessingException {
+        if (position == null || position < 0) position = 0;
+
+        if (clazz == null) {
+            return this.objectMapper.readValue(record.getValue(position).asString(), new TypeReference<T>() {
+            });
+        } else {
+            return this.objectMapper.readValue(record.getValue(position).asString(), clazz);
+        }
     }
 
 }

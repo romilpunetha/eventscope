@@ -13,17 +13,21 @@ import io.eventscope.clickhouse.view.View;
 import io.eventscope.clickhouse.view.materializedview.KafkaToEventsMaterializedView;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.mutiny.Uni;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import javax.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+//@QuarkusTestResource(ClickhouseTestResourceLifecycleManager.class)
+//@QuarkusTestResource(KafkaTestResourceLifecycleManager.class)
 public class TestKafkaInjection {
 
     Table eventsTable;
@@ -31,8 +35,12 @@ public class TestKafkaInjection {
 
     View kafkaToEventsView;
 
-    String testTopic = "test.topic";
+    String eventsTopic = "eventscope.events";
     String testGroup = "test.group";
+
+//    @Inject
+//    @Connector(value = "smallrye-in-memory")
+//    InMemoryConnector connector;
 
     @Inject
     ClickhouseRepository repository;
@@ -47,12 +55,17 @@ public class TestKafkaInjection {
 
         String kafkaBrokers = "clickhouse-kafka:9092";
 
+//        String kafkaBrokers = ConfigProvider.getConfig().getValue("kafka.bootstrap.servers", String.class);
+
         this.eventsTable = new EventsTable(clusterName);
 
-        KafkaEngine kafkaEngine = new KafkaEngine(kafkaBrokers, "eventscope.events", testGroup, InputFormat.JSONAsString);
+        KafkaEngine kafkaEngine = new KafkaEngine(kafkaBrokers, eventsTopic, testGroup, InputFormat.JSONAsString);
         this.eventsKafkaTable = new EventsKafkaTable(clusterName, kafkaEngine);
 
         kafkaToEventsView = new KafkaToEventsMaterializedView(clusterName);
+
+        List<Object> clusters = repository.runQuery("show clusters;").collect().asList().await().indefinitely();
+
 
         repository.runQuery("SET allow_experimental_object_type=1;").collect().asList().await().indefinitely();
         repository.createTable(eventsTable).await().indefinitely();
@@ -69,26 +82,32 @@ public class TestKafkaInjection {
     }
 
     @Test
-    public void addEventToClickhouse() throws JsonProcessingException {
+    public void addEventToClickhouse() throws JsonProcessingException, InterruptedException {
+
+//        InMemorySink<String> eventsIn = connector.sink(eventsTopic);
 
         String newString = "{\"a\" : \"b\", \"c\" : \"e\"}";
         JsonNode newNode = mapper.readTree(newString);
 
         Event event = Event.builder()
-                .id("3")
+                .id("5")
                 .idempotentId("123")
                 .properties(newNode)
                 .timeStamp(Instant.now())
                 .build();
 
-        service.injectEvent(event).await().indefinitely();
+//        service.injectEvent(event).await().indefinitely();
 
-        List<String> clickhouseEvent = repository.<String>runQuery(
-                        String.format("select * from events")
-                ).collect().asList()
+//        await().<List<? extends Message<String>>>until(eventsIn::received, t -> t.size() == 1);
+
+        List<Event> clickhouseEvents = Uni.createFrom().voidItem()
+                .onItem().delayIt().by(Duration.ofSeconds(1))
+                .onItem().transformToMulti(resp -> repository.runQuery(
+                        String.format("select * from events"), Event.class
+                )).collect().asList()
                 .await().indefinitely();
 
-        Log.info("\n\n\nRESPONSE : " + clickhouseEvent + "\n\n\n");
+        Log.info("\n\n\nRESPONSE : " + clickhouseEvents.get(0) + "\n\n\n");
     }
 
 }

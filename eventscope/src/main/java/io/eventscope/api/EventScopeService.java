@@ -23,7 +23,7 @@ public class EventScopeService {
 
         event.setCreatedAt(Instant.now());
         String eventString = objectMapper.writeValueAsString(event);
-        Log.info("\n\n\nQWERTY : " + eventString + "\n\n\n");
+        Log.debug("Event String : " + eventString);
         return Uni.createFrom().completionStage(() -> eventEmitter.send(eventString));
     }
 }
