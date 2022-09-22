@@ -1,0 +1,12 @@
+clickhouse:
+  hosts: http://localhost:8123/default?session_id=testSession
+
+kafka:
+  bootstrap:
+    servers: localhost:9093
+mp:
+  messaging:
+    outgoing:
+      events:
+        connector: smallrye-kafka
+        topic: eventscope.events

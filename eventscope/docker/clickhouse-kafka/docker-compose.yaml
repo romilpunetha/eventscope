@@ -1,0 +1,48 @@
+version: '3'
+services:
+  kafka:
+    image: docker.io/bitnami/kafka:3.2
+    ports:
+      - "9093:9093"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=clickhouse-zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://0.0.0.0:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://clickhouse-kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    container_name: clickhouse-kafka
+    hostname: clickhouse-kafka
+    depends_on:
+      - clickhouse-zookeeper
+  clickhouse-zookeeper:
+    image: zookeeper
+    ports:
+      - "2181:2181"
+      - "2182:2182"
+    container_name: clickhouse-zookeeper
+    hostname: clickhouse-zookeeper
+
+  clickhouse-01:
+    image: clickhouse/clickhouse-server:22.8.5.29
+    hostname: clickhouse-01
+    container_name: clickhouse-01
+    ports:
+      - 9001:9000
+      - 8123:8123
+    volumes:
+      - ./config/clickhouse_config.xml:/etc/clickhouse-server/config.xml
+      - ./config/clickhouse_metrika.xml:/etc/clickhouse-server/metrika.xml
+      - ./config/macros/macros-01.xml:/etc/clickhouse-server/config.d/macros.xml
+      - ./config/users.xml:/etc/clickhouse-server/users.xml
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    depends_on:
+      - "clickhouse-zookeeper"
+
+networks:
+  default:
+    external:
+      name: clickhouse-net
