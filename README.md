@@ -1,6 +1,6 @@
 # EventScope 
 
-## EventScope is an open-source everything-events platform. 
+## EventScope is simple and open-source everything-events platform. 
 
 * Send events to EventScope from any source like backend services, app, web, etc.
 * Perform realtime aggregations on events. 
