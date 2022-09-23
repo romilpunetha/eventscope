@@ -3,6 +3,7 @@ package io.eventscope.clickhouse.table;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.eventscope.clickhouse.engine.integration.kafka.KafkaEngine;
+import io.eventscope.clickhouse.table.schema.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,7 +22,11 @@ public class EventsKafkaTable extends KafkaTable {
 
     static final String name = "events_kafka";
 
-    static final String schema = Constant.KAFKA_EVENT_SCHEMA;
+    static final String schema = Schema.KAFKA_EVENT_SCHEMA;
+
+    static final String settings = """
+            kafka_skip_broken_messages = 100
+            """;
 
     final KafkaEngine engine;
     final String clusterName;
@@ -31,7 +36,8 @@ public class EventsKafkaTable extends KafkaTable {
                 .clusterName(clusterName)
                 .engine(engine)
                 .name(name)
-                .schema(schema));
+                .schema(schema)
+                .settings(settings));
         this.clusterName = clusterName;
         this.engine = engine;
     }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.logging.Log;
 import io.smallrye.mutiny.Uni;
+import org.apache.commons.lang3.ObjectUtils;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 
@@ -22,6 +23,8 @@ public class EventScopeService {
     public Uni<Void> injectEvent(Event event) throws JsonProcessingException {
 
         event.setCreatedAt(Instant.now());
+        if (ObjectUtils.isEmpty(event.getTimestamp()))
+            event.setTimestamp(Instant.now());
         String eventString = objectMapper.writeValueAsString(event);
         Log.debug("Event String : " + eventString);
         return Uni.createFrom().completionStage(() -> eventEmitter.send(eventString));

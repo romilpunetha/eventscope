@@ -23,5 +23,6 @@ public class KafkaTable implements Table {
     final String name;
     final String schema;
     final KafkaEngine engine;
+    final String settings;
 
 }

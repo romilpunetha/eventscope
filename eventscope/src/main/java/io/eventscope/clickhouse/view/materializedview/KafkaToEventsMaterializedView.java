@@ -2,7 +2,7 @@ package io.eventscope.clickhouse.view.materializedview;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.eventscope.clickhouse.table.Constant;
+import io.eventscope.clickhouse.table.schema.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,7 +25,7 @@ public class KafkaToEventsMaterializedView extends MaterializedView {
 
     static final String toTable = "events";
 
-    static final String select = Constant.KAFKA_EVENT_SELECT;
+    static final String select = Schema.KAFKA_EVENT_SELECT;
 
     public KafkaToEventsMaterializedView(String clusterName) {
         super(KafkaToEventsMaterializedView.builder()

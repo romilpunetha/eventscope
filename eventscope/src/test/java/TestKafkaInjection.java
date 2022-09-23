@@ -23,11 +23,10 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-//@QuarkusTestResource(ClickhouseTestResourceLifecycleManager.class)
-//@QuarkusTestResource(KafkaTestResourceLifecycleManager.class)
 public class TestKafkaInjection {
 
     Table eventsTable;
@@ -37,10 +36,6 @@ public class TestKafkaInjection {
 
     String eventsTopic = "eventscope.events";
     String testGroup = "test.group";
-
-//    @Inject
-//    @Connector(value = "smallrye-in-memory")
-//    InMemoryConnector connector;
 
     @Inject
     ClickhouseRepository repository;
@@ -54,8 +49,6 @@ public class TestKafkaInjection {
         String clusterName = "cluster_1";
 
         String kafkaBrokers = "clickhouse-kafka:9092";
-
-//        String kafkaBrokers = ConfigProvider.getConfig().getValue("kafka.bootstrap.servers", String.class);
 
         this.eventsTable = new EventsTable(clusterName);
 
@@ -84,21 +77,22 @@ public class TestKafkaInjection {
     @Test
     public void addEventToClickhouse() throws JsonProcessingException, InterruptedException {
 
-//        InMemorySink<String> eventsIn = connector.sink(eventsTopic);
-
-        String newString = "{\"a\" : \"b\", \"c\" : \"e\"}";
-        JsonNode newNode = mapper.readTree(newString);
+        String properties = "{\r\n    \"isPositive\" : true,\r\n    \"isCompleted\": true,\r\n    \"count\": 1,\r\n  \"user\" : {\r\n    \"isLoggedIn\": true,\r\n    \"location\": \"nearby\"\r\n    },\r\n  \"element\" : {\r\n    \"buttonClicked\": \"affirmative\"\r\n  }\r\n}";
+        JsonNode propertiesJson = mapper.readTree(properties);
 
         Event event = Event.builder()
                 .id("5")
                 .idempotentId("123")
-                .properties(newNode)
-                .timeStamp(Instant.now())
+                .name("signup")
+                .userId("abc")
+                .sessionId(UUID.randomUUID().toString())
+                .properties(propertiesJson)
+                .tenantId("default")
+                .timestamp(Instant.now())
+                .createdAt(Instant.now())
                 .build();
 
-//        service.injectEvent(event).await().indefinitely();
-
-//        await().<List<? extends Message<String>>>until(eventsIn::received, t -> t.size() == 1);
+        service.injectEvent(event).onItem().delayIt().by(Duration.ofSeconds(10)).await().indefinitely();
 
         List<Event> clickhouseEvents = Uni.createFrom().voidItem()
                 .onItem().delayIt().by(Duration.ofSeconds(1))

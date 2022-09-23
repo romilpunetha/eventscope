@@ -53,12 +53,13 @@ public interface Table {
 
                 + (StringUtils.isNotBlank(getSampleBy()) ?
                 String.format("""
-                        SAMPLE BY = %s
+                        SAMPLE BY %s
                         """, getSampleBy()) : "")
 
                 + (StringUtils.isNotBlank(getSettings()) ?
                 String.format("""
-                        SETTINGS = %s
+                        SETTINGS
+                         %s
                         """, getSettings()) : "")
                 ;
     }

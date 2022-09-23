@@ -22,18 +22,19 @@ public class Event {
 
     String id;
 
-    String name;
-
     String idempotentId;
 
-    Instant timeStamp;
+    String name;
 
     String userId;
 
+    String sessionId;
+
     JsonNode properties;
 
-    String tenantId;
+    Instant timestamp;
 
     Instant createdAt;
 
+    String tenantId;
 }

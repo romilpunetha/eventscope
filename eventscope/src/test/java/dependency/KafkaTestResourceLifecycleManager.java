@@ -11,7 +11,7 @@
 //    @Override
 //    public Map<String, String> start() {
 //
-//        Map<String, String> props1 = InMemoryConnector.switchOutgoingChannelsToInMemory(Constant.KAFKA_CHANNEL_NAME_EVENTS);
+//        Map<String, String> props1 = InMemoryConnector.switchOutgoingChannelsToInMemory(Schema.KAFKA_CHANNEL_NAME_EVENTS);
 //        return new HashMap<>(props1);
 //    }
 //

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.eventscope.clickhouse.engine.ReplicationSchema;
 import io.eventscope.clickhouse.engine.mergetree.MergeTreeEngine;
 import io.eventscope.clickhouse.engine.mergetree.ReplacingMergeTree;
+import io.eventscope.clickhouse.table.schema.Schema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +24,7 @@ public class EventsTable implements Table {
 
     final String name = "events";
 
-    final String schema = Constant.EVENT_SCHEMA;
+    final String schema = Schema.EVENT_SCHEMA;
 
     final MergeTreeEngine engine = new ReplacingMergeTree(name,
             ReplicationSchema.SHARDED,
