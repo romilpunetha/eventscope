@@ -1,16 +1,16 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.eventscope.api.Event;
-import io.eventscope.api.EventScopeService;
-import io.eventscope.clickhouse.ClickhouseRepository;
-import io.eventscope.clickhouse.engine.InputFormat;
-import io.eventscope.clickhouse.engine.integration.kafka.KafkaEngine;
-import io.eventscope.clickhouse.table.EventsKafkaTable;
-import io.eventscope.clickhouse.table.EventsTable;
-import io.eventscope.clickhouse.table.Table;
-import io.eventscope.clickhouse.view.View;
-import io.eventscope.clickhouse.view.materializedview.KafkaToEventsMaterializedView;
+import io.eventscope.api.event.db.materializedview.KafkaToEventsMaterializedView;
+import io.eventscope.api.event.db.table.EventsKafkaTable;
+import io.eventscope.api.event.db.table.EventsTable;
+import io.eventscope.api.event.model.Event;
+import io.eventscope.api.event.service.EventScopeService;
+import io.eventscope.common.table.Table;
+import io.eventscope.common.table.materializedview.View;
+import io.eventscope.db.clickhouse.ClickhouseRepository;
+import io.eventscope.db.clickhouse.engine.InputFormat;
+import io.eventscope.db.clickhouse.engine.integration.kafka.KafkaEngine;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
@@ -57,9 +57,6 @@ public class TestKafkaInjection {
 
         kafkaToEventsView = new KafkaToEventsMaterializedView(clusterName);
 
-        List<Object> clusters = repository.runQuery("show clusters;").collect().asList().await().indefinitely();
-
-
         repository.runQuery("SET allow_experimental_object_type=1;").collect().asList().await().indefinitely();
         repository.createTable(eventsTable).await().indefinitely();
         repository.createTable(eventsKafkaTable).await().indefinitely();
@@ -77,22 +74,39 @@ public class TestKafkaInjection {
     @Test
     public void addEventToClickhouse() throws JsonProcessingException, InterruptedException {
 
-        String properties = "{\r\n    \"isPositive\" : true,\r\n    \"isCompleted\": true,\r\n    \"count\": 1,\r\n  \"user\" : {\r\n    \"isLoggedIn\": true,\r\n    \"location\": \"nearby\"\r\n    },\r\n  \"element\" : {\r\n    \"buttonClicked\": \"affirmative\"\r\n  }\r\n}";
-        JsonNode propertiesJson = mapper.readTree(properties);
+        String j1String = "{\"isPositive\" : \"true\"}";
+        JsonNode j1 = mapper.readTree(j1String);
+
+        String j2String = "{\r\n    \"isPositive\" : false,\r\n    \"isCompleted\": [true, false],\r\n    \"count\": 1,\r\n  \"user\" : {\r\n    \"isLoggedIn\": true,\r\n    \"location\": \"nearby\"\r\n    },\r\n  \"element\" : {\r\n    \"buttonClicked\": \"affirmative\"\r\n  }\r\n}";
+        JsonNode j2 = mapper.readTree(j2String);
 
         Event event = Event.builder()
-                .id("5")
+                .id("3")
                 .idempotentId("123")
                 .name("signup")
                 .userId("abc")
                 .sessionId(UUID.randomUUID().toString())
-                .properties(propertiesJson)
+                .properties(j1)
                 .tenantId("default")
                 .timestamp(Instant.now())
                 .createdAt(Instant.now())
                 .build();
 
-        service.injectEvent(event).onItem().delayIt().by(Duration.ofSeconds(10)).await().indefinitely();
+        Event event2 = Event.builder()
+                .id("5")
+                .idempotentId("1234")
+                .name("signup")
+                .userId("abc")
+                .sessionId(UUID.randomUUID().toString())
+                .properties(j2)
+                .tenantId("default")
+                .timestamp(Instant.now())
+                .createdAt(Instant.now())
+                .build();
+
+
+        service.injectEvent(event).await().indefinitely();
+//        service.injectEvent(event2).onItem().delayIt().by(Duration.ofSeconds(10)).await().indefinitely();
 
         List<Event> clickhouseEvents = Uni.createFrom().voidItem()
                 .onItem().delayIt().by(Duration.ofSeconds(1))
@@ -101,7 +115,7 @@ public class TestKafkaInjection {
                 )).collect().asList()
                 .await().indefinitely();
 
-        Log.info("\n\n\nRESPONSE : " + clickhouseEvents.get(0) + "\n\n\n");
+        Log.info("\n\n\nRESPONSE : " + clickhouseEvents + "\n\n\n");
     }
 
 }

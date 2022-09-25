@@ -1,6 +1,8 @@
 package io.eventscope.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.eventscope.api.event.model.Event;
+import io.eventscope.api.event.service.EventScopeService;
 import io.smallrye.mutiny.Uni;
 
 import javax.enterprise.context.ApplicationScoped;

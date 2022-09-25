@@ -4,3 +4,9 @@ mp:
       events:
         connector: smallrye-kafka
         topic: eventscope.events
+
+eventscope:
+  shards:
+    enabled: true
+    count: 1
+    rebalance: false
