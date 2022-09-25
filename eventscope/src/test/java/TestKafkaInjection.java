@@ -74,7 +74,7 @@ public class TestKafkaInjection {
     @Test
     public void addEventToClickhouse() throws JsonProcessingException, InterruptedException {
 
-        String j1String = "{\"isPositive\" : \"true\"}";
+        String j1String = "{\"isPositive\" : 3}";
         JsonNode j1 = mapper.readTree(j1String);
 
         String j2String = "{\r\n    \"isPositive\" : false,\r\n    \"isCompleted\": [true, false],\r\n    \"count\": 1,\r\n  \"user\" : {\r\n    \"isLoggedIn\": true,\r\n    \"location\": \"nearby\"\r\n    },\r\n  \"element\" : {\r\n    \"buttonClicked\": \"affirmative\"\r\n  }\r\n}";
@@ -106,10 +106,10 @@ public class TestKafkaInjection {
 
 
         service.injectEvent(event).await().indefinitely();
-//        service.injectEvent(event2).onItem().delayIt().by(Duration.ofSeconds(10)).await().indefinitely();
+//        service.injectEvent(event2).await().indefinitely();
 
         List<Event> clickhouseEvents = Uni.createFrom().voidItem()
-                .onItem().delayIt().by(Duration.ofSeconds(1))
+                .onItem().delayIt().by(Duration.ofSeconds(5))
                 .onItem().transformToMulti(resp -> repository.runQuery(
                         String.format("select * from events"), Event.class
                 )).collect().asList()

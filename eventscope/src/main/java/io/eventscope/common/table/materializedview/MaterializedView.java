@@ -33,10 +33,8 @@ public class MaterializedView implements View {
                 CREATE MATERIALIZED VIEW IF NOT EXISTS default.%s TO %s
                 AS
                 SELECT
-                (
                 %s
-                )
-                FROM %s;
+                FROM %s
                 """, getName(), getToTable(), getSelect(), getFromTable());
     }
 
